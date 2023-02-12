@@ -40,12 +40,12 @@ class DDPG:
         self.actor.update_network_parameters(tau)
         self.critic.update_network_parameters(tau)
 
-    def choose_action(self, obs_goal):
+    def choose_action(self, obs_goal, evaluate):
         """
         Environment takes parallel actions, so we need to return a dictionary of agents in the environment
         return such that {"agent_0": [action_0, action_1 ... action_n], "agent_1": [action_0, action_1 ... action_n], ...}
         """
-        return self.actor.choose_action(obs_goal)
+        return self.actor.choose_action(obs_goal, evaluate)
 
     def learn(self, memory):
 
@@ -74,7 +74,8 @@ class DDPG:
             target = tf.reduce_mean(target, axis=0)
 
             #OpenAI implementation uses huber loss, but after testing, MSE works better
-            critic_loss = keras.losses.MSE(target, critic_value)
+            critic_loss = keras.losses.huber(target, critic_value, delta=1.0)
+            #critic_loss = keras.losses.MSE(target, critic_value)
 
 
         critic_network_gradient = tape.gradient(critic_loss, self.critic.critic.trainable_variables)
@@ -121,24 +122,27 @@ class ActorAgent:
 
         weights = []
         targets = self.target_actor.weights
+        if targets == []:
+            return
         for i, weight in enumerate(self.actor.weights):
             weights.append(weight * tau + targets[i]*(1-tau))
         self.target_actor.set_weights(weights)
 
-    def choose_action(self, obs):
+    def choose_action(self, obs, evaluate):
         state = tf.convert_to_tensor([obs], dtype=tf.float32)
         actions = self.actor(state)
         #add noise for exploration
-        actions += tf.convert_to_tensor(self.noise(), dtype=tf.float32)
+        if not evaluate:
+            actions += tf.convert_to_tensor(self.noise(), dtype=tf.float32)
         #clip the action to be between low and high otherwise environment will do it for you but 
         #it will affect performance and gives warning message
         actions = tf.clip_by_value(actions, self.actions_low, self.actions_high)
         return actions[0].numpy()
 
     def save_models(self):
-        print('... saving {} model ...' .format(self.actor.model_name))
+        #print('... saving {} model ...' .format(self.actor.model_name))
         self.actor.save_weights(self.actor.checkpoint_file, save_format='h5')
-        print('... saving {} model ...' .format(self.target_actor.model_name))
+        #print('... saving {} model ...' .format(self.target_actor.model_name))
         self.target_actor.save_weights(self.target_actor.checkpoint_file, save_format='h5')
 
 
@@ -171,14 +175,16 @@ class CriticAgent():
 
         weights = []
         targets = self.target_critic.weights
+        if targets == []:
+            return
         for i, weight in enumerate(self.critic.weights):
             weights.append(weight * tau + targets[i]*(1-tau))
         self.target_critic.set_weights(weights)
 
     def save_models(self):
-        print('... saving {} model ...'.format(self.critic.model_name))
+        #print('... saving {} model ...'.format(self.critic.model_name))
         self.critic.save_weights(self.critic.checkpoint_file, save_format='h5')
-        print('... saving {} model ...'.format(self.target_critic.model_name))
+        #print('... saving {} model ...'.format(self.target_critic.model_name))
         self.target_critic.save_weights(self.target_critic.checkpoint_file, save_format='h5')
 
     def load_models(self):

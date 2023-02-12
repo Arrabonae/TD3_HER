@@ -21,6 +21,16 @@ def plot_learning_curve():
     ax2.set_xlabel("Episodes")
     ax2.legend()
     plt.savefig(FIGURE_FILE2)
+    plt.clf()
+
+    x = [i+1 for i in range(len(EPISODE_LENGTH))]   
+    _, ax3 = plt.subplots()
+    ax3.plot(x, EPISODE_LENGTH, label='Episode Length', color='blue')
+    ax3.set_ylabel("Episode Length")
+    ax3.set_xlabel("Episodes")
+    ax3.legend()
+    plt.savefig(FIGURE_FILE3)
+
 
 class OrnsteinUhlenbeckActionNoise():
     """

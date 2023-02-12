@@ -3,6 +3,7 @@ import panda_gym
 import numpy as np
 from agent import DDPG
 from buffer import HER
+from buffer_v2 import HER2
 from config import *
 from utils import plot_learning_curve
 
@@ -22,20 +23,20 @@ def train(memory, agent, env):
                 ACTOR_LOSS.append(a_loss)
                 UPDATE_EPISODES.append(n_steps)
                 n_steps += 1
+            agent.update_network_parameters(TAU)
             epoch_success.append(np.mean(cycle_success))
             epoch_score.append(np.mean(cycle_score))
+        test_score, test_success = [], []
+        for episode in range(N_TESTS):
+            episode_score, episode_success = play_episode(memory, agent, env, evaluate=True)
+            test_success.append(episode_success)
+            test_score.append(episode_score)
 
-            if np.mean(cycle_success) > best_success:
-                best_success = np.mean(cycle_success)
-                agent.save_checkpoint()
+        SCORES_HISTORY.append(np.mean(test_score))
+        SUCCESS_HISTORY.append(np.mean(test_success))
+        print('Epoch: {} Score: {:.1f}; Success: {:.2%}' .format(i, np.mean(test_score), np.mean(test_success)))
 
-            #print('Cycle: {}, Score: {:.1f} Success: {:.2%}' .format(c, np.mean(cycle_score), np.mean(cycle_success)))
-        agent.update_network_parameters(TAU)
-        SUCCESS_HISTORY.append(np.mean(epoch_success))
-        SCORES_HISTORY.append(np.mean(epoch_score))
-        print('Epoch: {}, Steps: {}  Score: {:.1f} Success: {:.2%}' .format(i, n_steps, np.mean(epoch_score), np.mean(epoch_success)))
-
-def play_episode(memory, agent, env):
+def play_episode(memory, agent, env, evaluate=False):
     obs, info = env.reset()
     observation = obs['observation']
     achieved_goal = obs['achieved_goal']
@@ -46,12 +47,12 @@ def play_episode(memory, agent, env):
     
     while not done:
 
-        action = agent.choose_action(np.concatenate([observation, desired_goal]))
+        action = agent.choose_action(np.concatenate([observation, desired_goal]), evaluate)
 
         observation_, reward, done, truncated, info = env.step(action)
 
-        if truncated:
-            done = True
+        # if truncated:
+        #     done = True
 
         states.append(observation)
         states_.append(observation_['observation'])
@@ -67,10 +68,16 @@ def play_episode(memory, agent, env):
         achieved_goal = observation_['achieved_goal']
         desired_goal = observation_['desired_goal']
         observation = observation_['observation']
-
-    memory.store_transition(states, actions, rewards, states_, dones, d_goal, a_goal, a_goal_, infos)
-
-    #memory.store_episode(states, actions, rewards, states_, dones, d_goal, a_goal, a_goal_)
+    
+    
+    EPISODE_LENGTH.append(len(states))
+    if not evaluate:
+        #Openai HER
+        memory.store_transition(states, actions, rewards, states_, dones, d_goal, a_goal, a_goal_, infos)
+        
+        #Simple HER
+        #memory.store_episode(states, actions, rewards, states_, dones, d_goal, a_goal, a_goal_)
+    
     success = info['is_success']
 
     return score, success
@@ -84,6 +91,7 @@ if __name__ == '__main__':
     n_actions=env.action_space.shape[0]
     
     memory = HER(obs_shape, n_actions, goal_shape, env.compute_reward)
+    #memory = HER2(obs_shape, n_actions, goal_shape, env.compute_reward)
     agent = DDPG(n_actions, env.action_space.low, env.action_space.high, [obs_shape+goal_shape])
 
     train(memory, agent, env)

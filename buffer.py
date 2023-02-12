@@ -22,7 +22,7 @@ class HER:
         self.achieved_goals = np.zeros((self.memory_size, T,  self.goal_shape), dtype=np.float32)
         self.achieved_goals_ = np.zeros((self.memory_size, T, self.goal_shape), dtype=np.float64)
         self.infos = np.zeros((self.memory_size, T), dtype=np.bool_)
-
+        print("Running complex HER")
 
     def store_transition(self, state, action, reward, state_, done, d_goal, a_goal, a_goal_, infos):
         
@@ -51,29 +51,6 @@ class HER:
         self.infos[i] = infos
         
         self.mem_cntr += 1
-    
-    # def store_episode(self, state, action, reward, state_, done, d_goal, a_goal, a_goal_):
-
-    #     hindsight_goals = [[a_goal_[-1]]] * len(a_goal_)
-        
-    #     for i in range(len(state)):
-    #         self.store_memory(state[i], action[i], reward[i], state_[i], done[i], d_goal[i], a_goal[i], a_goal_[i])
-    #         for hindsight_goal in hindsight_goals[i]:
-    #             hindsight_reward = self.compute_reward(a_goal_[i], hindsight_goal, None)
-    #             self.store_memory(state[i], action[i], hindsight_reward, state_[i], done[i], hindsight_goal, a_goal[i], a_goal_[i])
-
-    # def sample_memory(self):    
-        
-    #     memory_max = min(self.mem_cntr, self.memory_size)
-    #     batch = np.random.choice(memory_max, self.batch_size, replace=False)
-        
-    #     return  self.states[batch], \
-    #             self.actions[batch], \
-    #             self.rewards[batch],\
-    #             self.states_[batch], \
-    #             self.dones[batch],\
-    #             self.desired_goals[batch]
-
 
     def sample_memory(self):
         """
@@ -110,11 +87,12 @@ class HER:
 
         future_achieved_goal =  self.achieved_goals[episode_samples[her_indexes], future_t]
         sample_desired_goals[her_indexes] = future_achieved_goal
+        future_infos = self.infos[episode_samples[her_indexes], future_t]
+        sample_infos[her_indexes] = future_infos
 
         #  Re-compute reward since we may have substituted the goal.
-
         for idx, value in enumerate(sample_infos):
-            sample_rewards[idx] = self.compute_reward(sample_achieved_goals[idx], sample_desired_goals[idx], {'is_success': value})
+            sample_rewards[idx] = self.compute_reward(sample_achieved_goals[idx], sample_desired_goals[idx], {'is_success': value}) #'is_success': value
 
         assert(sample_states.shape == (self.batch_size, self.input_shape))
         assert(sample_actions.shape == (self.batch_size, self.n_actions))
