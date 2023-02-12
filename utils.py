@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from config import *
 
 def plot_learning_curve():
-    x = [i+1 for i in range(N_GAMES)]        
+    x = [i+1 for i in range(EPOCHS)]        
     _, ax1 = plt.subplots()
     ax1.plot(x, SCORES_HISTORY, label = 'Episode reward', color= 'green')
     ax1.plot(x, SUCCESS_HISTORY, label = 'Success rate', color= 'blue')

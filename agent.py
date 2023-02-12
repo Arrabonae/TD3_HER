@@ -107,8 +107,8 @@ class ActorAgent:
         #per OpenAI paper, Ornstein-Uhlenbeck process for action noise is the best to introduce exploration
         self.noise = OrnsteinUhlenbeckActionNoise(mu= np.zeros(self.n_actions))
 
-        self.actor = ActorNetwork(n_actions=n_actions, name= 'actor')
-        self.target_actor = ActorNetwork(n_actions=n_actions, name= 'target_actor')
+        self.actor = ActorNetwork(n_actions=n_actions, name= 'Actor')
+        self.target_actor = ActorNetwork(n_actions=n_actions, name= 'Target_actor')
 
         self.actor.compile(optimizer=Adam(learning_rate=alpha, clipnorm=1))
         self.target_actor.compile(optimizer=Adam(learning_rate=alpha, clipnorm=1))
@@ -136,17 +136,17 @@ class ActorAgent:
         return actions[0].numpy()
 
     def save_models(self):
-        print('... saving {}  models ...' .format(self.actor.model_name))
+        print('... saving {} model ...' .format(self.actor.model_name))
         self.actor.save_weights(self.actor.checkpoint_file, save_format='h5')
-        print('... saving {}  models ...' .format(self.target_actor.model_name))
+        print('... saving {} model ...' .format(self.target_actor.model_name))
         self.target_actor.save_weights(self.target_actor.checkpoint_file, save_format='h5')
 
 
     def load_models(self, actor_shape):
-        print('... loading {}  models ...'.format(self.actor.model_name))
+        print('... loading {} model ...'.format(self.actor.model_name))
         self.actor.build((BATCH_SIZE, actor_shape))
         self.actor.load_weights(self.actor.checkpoint_file)
-        print('... loading {}  models ...' .format(self.target_actor.model_name))
+        print('... loading {} model ...' .format(self.target_actor.model_name))
         self.target_actor.build((BATCH_SIZE, actor_shape))
         self.target_actor.load_weights(self.target_actor.checkpoint_file)
 
@@ -176,13 +176,13 @@ class CriticAgent():
         self.target_critic.set_weights(weights)
 
     def save_models(self):
-        print('... saving {} models ...'.format(self.critic.model_name))
+        print('... saving {} model ...'.format(self.critic.model_name))
         self.critic.save_weights(self.critic.checkpoint_file, save_format='h5')
-        print('... saving {} models ...'.format(self.target_critic.model_name))
+        print('... saving {} model ...'.format(self.target_critic.model_name))
         self.target_critic.save_weights(self.target_critic.checkpoint_file, save_format='h5')
 
     def load_models(self):
-        print('... loading {} models ...'.format(self.critic.model_name))
+        print('... loading {} model ...'.format(self.critic.model_name))
         self.critic.load_weights(self.critic.checkpoint_file)
-        print('... loading {} models ...'.format(self.target_critic.model_name))
+        print('... loading {} model ...'.format(self.target_critic.model_name))
         self.update_network_parameters(TAU)

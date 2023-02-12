@@ -7,26 +7,33 @@ from config import *
 from utils import plot_learning_curve
 
 def train(memory, agent, env):
-    n_steps = 0
+    n_steps, best_success = 0, 0
     for i in range(EPOCHS):
-        for _ in range(CYCLES):
+        epoch_success, epoch_score = [], []
+        for c in range(CYCLES):
             cycle_success, cycle_score = [], []
             for _ in range(EPISODES_PER_CYCLE):
                 episode_score, episode_success = play_episode(memory, agent, env)
                 cycle_success.append(episode_success)
                 cycle_score.append(episode_score)
-                for _ in range(OPTIMIZER_STEPS):
-                    c_loss, a_loss = agent.learn(memory)
-                    CRITIC_LOSS.append(c_loss)
-                    ACTOR_LOSS.append(a_loss)
-                    UPDATE_EPISODES.append(n_steps)
-                    SUCCESS_HISTORY.append(episode_success)
-                    SCORES_HISTORY.append(episode_score)
-                    n_steps += 1
-        agent.update_target_networks(TAU)
-        print('Epoch: {}, Steps: {}  Score: {:.1f} Success: {:.3f}' .format(i, n_steps, episode_score, episode_success))
+            for _ in range(OPTIMIZER_STEPS):
+                c_loss, a_loss = agent.learn(memory)
+                CRITIC_LOSS.append(c_loss)
+                ACTOR_LOSS.append(a_loss)
+                UPDATE_EPISODES.append(n_steps)
+                n_steps += 1
+            epoch_success.append(np.mean(cycle_success))
+            epoch_score.append(np.mean(cycle_score))
 
+            if np.mean(cycle_success) > best_success:
+                best_success = np.mean(cycle_success)
+                agent.save_checkpoint()
 
+            #print('Cycle: {}, Score: {:.1f} Success: {:.2%}' .format(c, np.mean(cycle_score), np.mean(cycle_success)))
+        agent.update_network_parameters(TAU)
+        SUCCESS_HISTORY.append(np.mean(epoch_success))
+        SCORES_HISTORY.append(np.mean(epoch_score))
+        print('Epoch: {}, Steps: {}  Score: {:.1f} Success: {:.2%}' .format(i, n_steps, np.mean(epoch_score), np.mean(epoch_success)))
 
 def play_episode(memory, agent, env):
     obs, info = env.reset()
@@ -35,8 +42,8 @@ def play_episode(memory, agent, env):
     desired_goal = obs['desired_goal']
     done = False
     score = 0
-    states, actions, rewards, states_, dones, d_goal, a_goal, a_goal_ = [], [], [], [], [], [], [], []
-
+    states, actions, rewards, states_, dones, d_goal, a_goal, a_goal_, infos = [], [], [], [], [], [], [], [], []
+    
     while not done:
 
         action = agent.choose_action(np.concatenate([observation, desired_goal]))
@@ -54,14 +61,16 @@ def play_episode(memory, agent, env):
         d_goal.append(observation_['desired_goal'])
         a_goal.append(achieved_goal)
         a_goal_.append(observation_['achieved_goal'])
-        
+        infos.append(info['is_success'])
         
         score += reward
         achieved_goal = observation_['achieved_goal']
         desired_goal = observation_['desired_goal']
         observation = observation_['observation']
-       
-    memory.store_episode(states, actions, rewards, states_, dones, d_goal, a_goal, a_goal_)
+
+    memory.store_transition(states, actions, rewards, states_, dones, d_goal, a_goal, a_goal_, infos)
+
+    #memory.store_episode(states, actions, rewards, states_, dones, d_goal, a_goal, a_goal_)
     success = info['is_success']
 
     return score, success
@@ -69,12 +78,12 @@ def play_episode(memory, agent, env):
 
 
 if __name__ == '__main__':
-    env = gym.make("PandaPush-v3")
+    env = gym.make("PandaReach-v3")
     obs_shape = env.observation_space['observation'].shape[0]
     goal_shape = env.observation_space['achieved_goal'].shape[0]
     n_actions=env.action_space.shape[0]
     
-    memory = HER(obs_shape, n_actions,goal_shape, env.compute_reward)
+    memory = HER(obs_shape, n_actions, goal_shape, env.compute_reward)
     agent = DDPG(n_actions, env.action_space.low, env.action_space.high, [obs_shape+goal_shape])
 
     train(memory, agent, env)
