@@ -4,7 +4,7 @@ import numpy as np
 from agent import TD3
 from buffer import HER
 from config import *
-from utils import plot_learning_curve, save_frames_as_gif
+from utils import plot_learning_curve
 
 def train(memory, agent, env):
     best_success, best_score = -np.inf, -np.inf
@@ -13,7 +13,6 @@ def train(memory, agent, env):
             for _ in range(EPISODES_PER_CYCLE):
                 _, _ = play_episode(memory, agent, env)
             for _ in range(OPTIMIZER_STEPS):
-                agent.load_checkpoint()
                 agent.learn(memory)
             agent.update_network_parameters(TAU)
         test_score, test_success = [], []
@@ -33,7 +32,6 @@ def train(memory, agent, env):
         print('Epoch: {} Score: {:.1f}; Success: {:.2%}' .format(i, np.mean(test_score), np.mean(test_success)))
 
 def play_episode(memory, agent, env, evaluate=False):
-    frames = []
     obs, info = env.reset()
     observation = obs['observation']
     achieved_goal = obs['achieved_goal']
@@ -47,8 +45,6 @@ def play_episode(memory, agent, env, evaluate=False):
         action = agent.choose_action(np.concatenate([observation, desired_goal]), evaluate)
 
         observation_, reward, done, truncated, info = env.step(action)
-        
-        frames.append(env.render())
 
         states.append(observation)
         states_.append(observation_['observation'])
@@ -73,13 +69,11 @@ def play_episode(memory, agent, env, evaluate=False):
     
     success = info['is_success']
 
-    save_frames_as_gif(frames, 1)
-
     return score, success
 
 
 if __name__ == '__main__':
-    env = gym.make("PandaReach-v3", render_mode="rgb_array", renderer="OpenGL")
+    env = gym.make("PandaReach-v3")
     obs_shape = env.observation_space['observation'].shape[0]
     goal_shape = env.observation_space['achieved_goal'].shape[0]
     n_actions=env.action_space.shape[0]
