@@ -102,7 +102,7 @@ class TD3:
         CRITIC_LOSS1.append(critic_loss1.numpy())
         CRITIC_LOSS2.append(critic_loss2.numpy())
 
-        if self.learn_step_cntr % ACTOR_UPDATE_ITER != 0:
+        if self.learn_step_cntr % DELAY_STEPS != 0:
             return
 
         with tf.GradientTape() as tape:

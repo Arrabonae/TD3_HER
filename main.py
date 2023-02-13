@@ -4,22 +4,20 @@ import numpy as np
 from agent import TD3
 from buffer import HER
 from config import *
-from utils import plot_learning_curve
+from utils import plot_learning_curve, save_frames_as_gif
 
 def train(memory, agent, env):
     best_success, best_score = -np.inf, -np.inf
     for i in range(EPOCHS):
-        for c in range(CYCLES):
-            for ec in range(EPISODES_PER_CYCLE):
+        for _ in range(CYCLES):
+            for _ in range(EPISODES_PER_CYCLE):
                 _, _ = play_episode(memory, agent, env)
-                #print("Playing: ", ec)
-            for o in range(OPTIMIZER_STEPS):
+            for _ in range(OPTIMIZER_STEPS):
+                agent.load_checkpoint()
                 agent.learn(memory)
-                #print("Learning: ", o)
             agent.update_network_parameters(TAU)
-            #print("Cycle: ", c)
         test_score, test_success = [], []
-        for episode in range(N_TESTS):
+        for _ in range(N_EVAL):
             score, success = play_episode(memory, agent, env, evaluate=True)
             test_success.append(success)
             test_score.append(score)
@@ -28,15 +26,15 @@ def train(memory, agent, env):
             best_success = np.mean(test_success)
             best_score = np.mean(test_score)
             agent.save_checkpoint()
-            print('Best success so far: {:.2%}; best score so far: {:.1f}' .format(best_success, best_score))
+            print('Best score so far: {:.1f}; best success so far: {:.2%}' .format(best_score, best_success))
 
         SCORES_HISTORY.append(np.mean(test_score))
         SUCCESS_HISTORY.append(np.mean(test_success))
         print('Epoch: {} Score: {:.1f}; Success: {:.2%}' .format(i, np.mean(test_score), np.mean(test_success)))
 
 def play_episode(memory, agent, env, evaluate=False):
+    frames = []
     obs, info = env.reset()
-    #obs = env.reset()
     observation = obs['observation']
     achieved_goal = obs['achieved_goal']
     desired_goal = obs['desired_goal']
@@ -48,8 +46,9 @@ def play_episode(memory, agent, env, evaluate=False):
 
         action = agent.choose_action(np.concatenate([observation, desired_goal]), evaluate)
 
-        #observation_, reward, done, info = env.step(action)
         observation_, reward, done, truncated, info = env.step(action)
+        
+        frames.append(env.render())
 
         states.append(observation)
         states_.append(observation_['observation'])
@@ -74,11 +73,13 @@ def play_episode(memory, agent, env, evaluate=False):
     
     success = info['is_success']
 
+    save_frames_as_gif(frames, 1)
+
     return score, success
 
 
 if __name__ == '__main__':
-    env = gym.make("PandaReach-v3")
+    env = gym.make("PandaReach-v3", render_mode="rgb_array", renderer="OpenGL")
     obs_shape = env.observation_space['observation'].shape[0]
     goal_shape = env.observation_space['achieved_goal'].shape[0]
     n_actions=env.action_space.shape[0]

@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import animation
 from config import *
 
 def plot_learning_curve():
@@ -58,3 +59,21 @@ class OrnsteinUhlenbeckActionNoise():
 
     def reset(self):
         self.x_prev = self.x0 if self.x0 is not None else np.zeros_like(self.mu)
+
+
+
+    def save_frames_as_gif(frames, episode, path = 'gifs/'):
+        filename = 'episode_' +str(episode) +'.gif'
+
+        #Mess with this to change frame size
+        #plt.figure(figsize=(frames[0].shape[1]/24, frames[0].shape[0]/24 ))#, dpi = 100)
+
+        patch = plt.imshow(frames[0])
+        plt.axis('off')
+
+        def animate(i):
+            patch.set_data(frames[i])
+
+        anim = animation.FuncAnimation(plt.gcf(), animate, frames = len(frames), interval=100)
+        anim.save(path + filename, writer='pillow', fps=100)
+        plt.close()
