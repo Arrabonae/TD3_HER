@@ -5,12 +5,12 @@ from config import *
 class HER:
     def __init__(self, input_shape, n_actions, goal_shape, compute_reward):
         self.memory_size = int(BUFFER_SIZE / T)
-        self.mem_cntr = 0
         self.batch_size = BATCH_SIZE
         self.input_shape = input_shape
         self.compute_reward = compute_reward
         self.n_actions = n_actions
         self.goal_shape = goal_shape
+        self.mem_cntr = 0
 
         self.states = np.zeros((self.memory_size, T, self.input_shape),dtype=np.float32)
         self.states_ = np.zeros((self.memory_size, T, self.input_shape), dtype=np.float64)
@@ -22,24 +22,34 @@ class HER:
         self.achieved_goals = np.zeros((self.memory_size, T,  self.goal_shape), dtype=np.float32)
         self.achieved_goals_ = np.zeros((self.memory_size, T, self.goal_shape), dtype=np.float64)
         self.infos = np.zeros((self.memory_size, T), dtype=np.bool_)
-        print("Running complex HER")
+        print("Running with HER")
 
     def store_transition(self, state, action, reward, state_, done, d_goal, a_goal, a_goal_, infos):
-        
+
         i = self.mem_cntr % self.memory_size
 
-        if len(state) != 50:
-            for _ in range(50-len(state)):
-                state.append(state[-1])
-                state_.append(state_[-1])
-                action.append(action[-1])
-                reward.append(reward[-1])
-                done.append(done[-1])
-                d_goal.append(d_goal[-1])
-                a_goal.append(a_goal[-1])
-                a_goal_.append(a_goal_[-1])
-                infos.append(infos[-1])
+        #if episode was shorted than T, pad with last state
+        for _ in range(T-len(state)):
+            state.append(state[-1])
+            state_.append(state_[-1])
+            action.append(action[-1])
+            reward.append(reward[-1])
+            done.append(done[-1])
+            d_goal.append(d_goal[-1])
+            a_goal.append(a_goal[-1])
+            a_goal_.append(a_goal_[-1])
+            infos.append(infos[-1])
         
+        assert(len(state) == T)
+        assert(len(state_) == T)
+        assert(len(action) == T)
+        assert(len(reward) == T)
+        assert(len(done) == T)
+        assert(len(d_goal) == T)
+        assert(len(a_goal) == T)
+        assert(len(a_goal_) == T)
+        assert(len(infos) == T)
+
         self.states[i] = state
         self.states_[i] = state_
         self.actions[i] = action
@@ -102,6 +112,3 @@ class HER:
         assert(sample_desired_goals.shape == (self.batch_size, self.goal_shape))
 
         return sample_states, sample_actions, sample_rewards, sample_states_, sample_dones, sample_desired_goals
-
-    def ready(self):
-        return self.mem_cntr > self.batch_size

@@ -18,13 +18,13 @@ class CriticNetwork(keras.Model):
         self.model_name = name
         self.checkpoint_dir = CHECKPOINT_DIR
         self.checkpoint_file = os.path.join(self.checkpoint_dir, 
-                    self.model_name+'_DDPG')
+                    self.model_name+'_TD3')
 
         #OpenAI paper suggest two 128 hidden layers
-        self.fc1 = Dense(self.critic_dense1, activation=CRITIC_ACTIVATION_HIDDEN)#, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT)
-        self.fc2 = Dense(self.critic_dense2, activation=CRITIC_ACTIVATION_HIDDEN)#, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT)
-        self.fc3 = Dense(self.critic_dense3, activation=CRITIC_ACTIVATION_HIDDEN)#, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT)
-        self.q = Dense(1, activation=CRITIC_ACTIVATION_OUTPUT)#, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT)
+        self.fc1 = Dense(self.critic_dense1, activation=CRITIC_ACTIVATION_HIDDEN, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT)
+        self.fc2 = Dense(self.critic_dense2, activation=CRITIC_ACTIVATION_HIDDEN, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT)
+        self.fc3 = Dense(self.critic_dense3, activation=CRITIC_ACTIVATION_HIDDEN, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT)
+        self.q = Dense(1, activation=CRITIC_ACTIVATION_OUTPUT, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT)
 
     def call(self, inputs):
         """
@@ -56,14 +56,14 @@ class ActorNetwork(keras.Model):
         self.model_name = name
         self.checkpoint_dir = CHECKPOINT_DIR
         self.checkpoint_file = os.path.join(self.checkpoint_dir, 
-                    self.model_name+'_DDPG')
+                    self.model_name+'_TD3')
 
 
-        self.fc1 = Dense(self.actors_dense1, activation=ACTORS_ACTIVATION_HIDDEN)#, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT)
-        self.fc2 = Dense(self.actors_dense2, activation=ACTORS_ACTIVATION_HIDDEN)#, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT)
-        self.fc3 = Dense(self.actors_dense3, activation=ACTORS_ACTIVATION_HIDDEN)#, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT)
+        self.fc1 = Dense(self.actors_dense1, activation=ACTORS_ACTIVATION_HIDDEN, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT)
+        self.fc2 = Dense(self.actors_dense2, activation=ACTORS_ACTIVATION_HIDDEN, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT)
+        self.fc3 = Dense(self.actors_dense3, activation=ACTORS_ACTIVATION_HIDDEN, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT)
         #using Tanh
-        self.mu = Dense(self.n_actions, activation=ACTORS_ACTIVATION_OUTPUT)#, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT) 
+        self.mu = Dense(self.n_actions, activation=ACTORS_ACTIVATION_OUTPUT, kernel_initializer=WEIGHT_INIT, bias_initializer=BIAS_INIT) 
 
     def call(self, state_goal):
         """

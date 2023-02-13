@@ -3,32 +3,37 @@ import matplotlib.pyplot as plt
 from config import *
 
 def plot_learning_curve():
-    x = [i+1 for i in range(EPOCHS)]        
+    x = [i+1 for i in range(len(SCORES_HISTORY))]        
     _, ax1 = plt.subplots()
+    ax2 = ax1.twinx()
     ax1.plot(x, SCORES_HISTORY, label = 'Episode reward', color= 'green')
-    ax1.plot(x, SUCCESS_HISTORY, label = 'Success rate', color= 'blue')
-    ax1.set_ylabel("Score / Success rate")
+    ax2.plot(x, SUCCESS_HISTORY, label = 'Success rate', color= 'blue')
+    ax1.set_ylabel("Score")
+    ax2.set_ylabel("Success rate")
     ax1.set_xlabel("Episodes")
     ax1.legend()
     plt.title('Performance of the agents')
     plt.savefig(FIGURE_FILE)
     plt.clf()
 
-    _, ax2 = plt.subplots()
-    ax2.plot(UPDATE_EPISODES, CRITIC_LOSS, label='Critic loss', color='blue')
-    ax2.plot(UPDATE_EPISODES, ACTOR_LOSS, label='Actor loss', color='green')
-    ax2.set_ylabel("Loss")
-    ax2.set_xlabel("Episodes")
-    ax2.legend()
+    x = [i+1 for i in range(len(CRITIC_LOSS1))]  
+    _, ax3 = plt.subplots()
+    ax3.plot(x, CRITIC_LOSS1, label='Critic loss 1', color='blue')
+    ax3.plot(x, CRITIC_LOSS2, label='Critic loss 2', color='green')
+    ax3.set_ylabel("Critics Loss")
+    ax3.set_xlabel("Update cycles")
+    plt.title('Overall Critic Loss')
+    ax3.legend()
     plt.savefig(FIGURE_FILE2)
     plt.clf()
 
-    x = [i+1 for i in range(len(EPISODE_LENGTH))]   
-    _, ax3 = plt.subplots()
-    ax3.plot(x, EPISODE_LENGTH, label='Episode Length', color='blue')
-    ax3.set_ylabel("Episode Length")
-    ax3.set_xlabel("Episodes")
-    ax3.legend()
+    x = [i+1 for i in range(len(ACTOR_LOSS))]  
+    _, ax4 = plt.subplots()
+    ax4.plot(x, ACTOR_LOSS, label='Actor loss 1', color='red')
+    ax4.set_ylabel("Actor Loss")
+    ax4.set_xlabel("Update cycles")
+    plt.title('Overall Actor Loss')
+    ax4.legend()
     plt.savefig(FIGURE_FILE3)
 
 
