@@ -1,5 +1,5 @@
 
-# Twin Delayed Deep Deterministing Policy Gradient with HER memory (TD3-HER)
+# Twin Delayed Deep Deterministic Policy Gradient with HER memory (TD3-HER)
 
 ## Panda Gym environment for sparse reward
 This repository is an example of Twin Delayed Deep Deterministic Policy Gradient architecture with hindsight experience replay memory. This implementation is fine-tuned for environment: **PandaReach-v3**. <br/>
